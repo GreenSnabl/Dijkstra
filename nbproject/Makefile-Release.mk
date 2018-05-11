@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/Aus_Forum.o \
 	${OBJECTDIR}/Dijkstra.o \
 	${OBJECTDIR}/main.o
 
@@ -62,6 +63,11 @@ LDLIBSOPTIONS=
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/dijkstra: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/dijkstra ${OBJECTFILES} ${LDLIBSOPTIONS}
+
+${OBJECTDIR}/Aus_Forum.o: Aus_Forum.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Aus_Forum.o Aus_Forum.cpp
 
 ${OBJECTDIR}/Dijkstra.o: Dijkstra.cpp
 	${MKDIR} -p ${OBJECTDIR}
