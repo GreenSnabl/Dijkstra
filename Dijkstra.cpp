@@ -34,10 +34,10 @@ struct Position {
     int y;
 
     bool operator!=(const Position &other) const {
-        if (this->x != other.x && this->y != other.y) return true;
+        return (this->x != other.x && this->y != other.y);
     }
     bool operator==(const Position &other) const {
-        if (this->x == other.x && this->y == other.y) return true;
+        return (this->x == other.x && this->y == other.y);
     }
     bool operator<(const Position& pos) const {
         if (this->y != pos.y) return this->y < pos.y;
@@ -46,6 +46,8 @@ struct Position {
     friend ostream& operator<<(ostream& os, const Position& pos) {
         os << "{" << pos.x << "," << pos.y << "}";
     }
+    
+    Position& operator=(const Position& other) {this->x = other.x; this->y = other.y; return *this;}
 };
 
 struct Edge {
@@ -71,24 +73,23 @@ struct Edge {
     }
 };
 
-struct Graph {
 
-    void addVertices(bool arr[10][5], set<Position>& vertices) {
-        for (int i = 0; i < 10; ++i) {
-            for (int j = 0; j < 5; ++j) {
+    void addVertices(bool arr[4][3], set<Position>& vertices) {
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 3; ++j) {
 
                 if (arr[i][j] == true) vertices.insert({j, i});
             }
         }
     }
 
-    void addEdges(bool arr[10][5], set<Edge>& edges) {
-        for (int i = 0; i < 10; ++i) {
-            for (int j = 0; j < 5; ++j) {
+    void addEdges(bool arr[4][3], set<Edge>& edges) {
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 3; ++j) {
                 if (arr[i][j] == true) {
                     for (int k = i - 1; k < i + 2; ++k) {
                         for (int l = j - 1; l < j + 2; ++l) {
-                            if (k < 0 || k >= 10 || l < 0 || l >= 5 || (k == i && l == j)) continue;
+                            if (k < 0 || k >= 4 || l < 0 || l >= 3 || (k == i && l == j)) continue;
                             if (arr[k][l] == true) edges.insert({
                                     {j, i},
                                     {l, k}
@@ -109,19 +110,13 @@ struct Graph {
         for (auto it : edges)
             cout << it << endl;
     }
-};
-
-
-typedef std::pair<Position, int> MyPairType;
 
 struct CompareSecond {
 
-    bool operator()(const MyPairType& left, const MyPairType& right) const {
+    bool operator()(const std::pair<Position, int>& left, const std::pair<Position,int>& right) const {
         return left.second < right.second;
     }
 };
-
-
 
 Position minDistance(map<Position, int>& dist) {
     std::pair<Position, int> min = *std::min_element(dist.begin(), dist.end(), CompareSecond());
@@ -130,62 +125,55 @@ Position minDistance(map<Position, int>& dist) {
 
 
 
-vector<Position> dijkstra(map<Position, map<Position, int> > graph, Position source, Position dest) {
+void dijkstra(map<Position, map<Position, int> > graph, Position source, Position dest, vector<Position>& shortestPath) {
 
-    set<Position> q;
-
-    for (auto it : graph)
-        q.insert(it.first);
-
+    map<Position, int> q;
     map<Position, int> dist;
     map<Position, Position> prev;
-    for (auto it : q) {
-        dist.insert({it, INF});
-        prev.insert({it,
-            {-1, -1}});
+    for (auto it : graph) {
+        Position pos = it.first;
+        q.insert({pos, INF});
+        dist.insert({pos, INF});
+        prev.insert({pos, {-1, -1}});
     }
-    dist[source] = 0;
+    q.insert({dest, INF});
+    dist.insert({dest, INF});
+    prev.insert({dest, {-1,-1}});
+     dist[source] = 0;
+     q[source] = 0;
+
 
     while (!q.empty()) {
-        Position u = minDistance(dist);
-        q.erase(u);
-        for (auto it : graph[u]) {
-            int alt = dist[u] + it.second;
+        Position v = minDistance(q);
+        q.erase(v);
+        for (auto it : graph[v]) {
+            int alt = dist[v] + it.second;
             if (alt < dist[it.first]) {
                 dist[it.first] = alt;
-                prev[it.first] = u;
+                q[it.first] = alt;
+                prev[it.first] = v;
             }
         }
-        if (u == dest) break;
+      // if (v == dest) break;
     }
-    vector<Position> shortestPath;
+
     if (dist[dest] != INF) {
-
         shortestPath.push_back(dest);
-        while (prev[shortestPath[0]].x != -1 || prev[shortestPath[0]].y != -1) {
-            shortestPath.push_back(prev[shortestPath[0]]);
-
+        while (prev[shortestPath[shortestPath.size()-1]].x != -1 && prev[shortestPath[shortestPath.size()-1]].y != -1) {
+            shortestPath.push_back(prev[shortestPath[shortestPath.size()-1]]);
         }
     }
-    return shortestPath;
 }
 
-void addEdges(bool arr[10][5], map<Position, map<Position, int> >& graph) {
+void addEdges(bool arr[4][3], map<Position, map<Position, int> >& graph) {
 
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < 5; ++j) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
             if (arr[i][j] == true) {
-                for (int k = i - 1; k < i + 2; ++k) {
-                    for (int l = j - 1; l < j + 2; ++l) {
-                        if (k < 0 || k >= 10 || l < 0 || l >= 5 || (k == i && l == j)) continue;
-                        if (arr[k][l] == true) graph[ {
-                            j, i
-                        }
-                        ][
-                        {
-                            l, k
-                        }
-                        ] = 1;
+                for (int k = i; k < i + 2; ++k) {
+                    for (int l = j; l < j + 2; ++l) {
+                        if (k < 0 || k >= 4 || l < 0 || l >= 3 || (k == i && l == j)) continue;
+                        if (arr[k][l] == true) graph[{j, i}][{l, k}] = 1;
                     }
                 }
             }
@@ -204,29 +192,51 @@ int main(int argc, char** argv) {
 
 
 
-    bool arr[10][5]{
-        {true, false, false, false, true},
-        {true, false, true, true, true},
-        {true, false, false, false, true},
-        {true, false, true, true, true},
-        {true, false, true, false, true},
-        {true, false, true, true, true},
-        {true, true, false, false, true},
-        {true, false, true, true, true},
-        {true, false, false, false, true},
-        {true, false, true, true, true}
+    bool arr[4][3]{
+        {true, false, false},
+        {true, false, false},
+        {true, false, true},
+        {false, true, true}
+ 
     };
 
     map<Position, map<Position, int> > graph;
     addEdges(arr, graph);
-
+    
+    set<Edge> edges;
+    addEdges(arr, edges);
+    
+    set<Position> vertices;
+    addVertices(arr, vertices);
+    
+    map<Position, map<Position, int> > graph2;
+    
+    //printEdges(edges);
+    
+    //printVertices(vertices);
+    
+    
+    for (auto it : vertices)
+    {
+        for (auto it2 : edges)
+        {
+            if (it == it2.vertex_1) {
+                graph2[it2.vertex_1][it2.vertex_2] = 1;
+            }
+        }
+    
+    }
+    
+    
+    
+    
     vector<Position> shortestPath;
-    shortestPath = dijkstra(graph, {0,0}, {3,9});
+    dijkstra(graph2, {0,0}, {2,3}, shortestPath);
     
     for (auto it : shortestPath)
         cout << it << endl;
-    
-    //printGraph(graph);
+  
+    //printGraph(graph2);
 
 
     return 0;
