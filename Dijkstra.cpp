@@ -25,7 +25,8 @@ struct Position {
     int y;
     
     bool operator!=(const Position &other) const {
-        if (this->x != other.x && this->y != other.y) return true;
+        if (this->x != other.x || this->y != other.y) return true;
+        return false;
     }
     
     bool operator<(const Position& pos) const
@@ -69,16 +70,20 @@ struct Edge {
 };
 
 struct Mengen {
+        
+    static const int m_max_w = 5;
+    static const int m_max_h = 10;
+    
     set<Edge> edges;
     set<Position> vertices;
 
 
 
 
-    void addVertices(bool arr[10][5])
+    void addVertices(bool arr[m_max_h][m_max_w])
     {
-        for (int i = 0; i < 10; ++i) {
-            for (int j = 0; j < 5; ++j) {
+        for (int i = 0; i < m_max_h; ++i) {
+            for (int j = 0; j < m_max_w; ++j) {
                 
                 if (arr[i][j] == true) vertices.insert({j,i});
             }
@@ -86,7 +91,7 @@ struct Mengen {
                 
     }
 
-    void addEdges(bool arr[10][5]) 
+    void addEdges(bool arr[m_max_h][m_max_w]) 
     {
         for (int i = 0; i < 10; ++i) {
             for (int j = 0; j < 5; ++j)
@@ -120,19 +125,23 @@ struct Mengen {
     }
 };
 
+
+    const int m_max_w = 5;
+    const int m_max_h = 10;
+
 int main(int argc, char** argv) {
 
     bool arr[10][5] {
-        {true, false, false, false, true},
-        {true, false, true, true, true},
-        {true, false, false, false, true},
-        {true, false, true, true, true},
-        {true, false, true, false, true},
-        {true, false, true, true, true},
-        {true, true, false, false, true},
-        {true, false, true, true, true},
-        {true, false, false, false, true},
-        {true, false, true, true, true}
+        {false, false, false, false, true},
+        {false, false, true, false, true},
+        {true, false, false, true, false},
+        {false, true, false, true, false},
+        {false, false, true, false, true},
+        {false, false, true, true, false},
+        {false, true, false, false, false},
+        {false, true, true, false, true},
+        {true, false, false, true, false},
+        {true, false, false, true, false}
     };
     
     Mengen m;
