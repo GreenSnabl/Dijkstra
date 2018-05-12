@@ -1,33 +1,27 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   Dijkstra_Skiena.cpp
- * Author: snbl
- * 
- * Created on May 11, 2018, 10:00 AM
- */
-
-#include <set>
-#include <map>
-#include <limits>
-#include <ostream>
 #include <iostream>
 #include <vector>
-#include <algorithm>
+#include <map>
+#include <string>
+#include <list>
+#include <limits> 
+#include <set>
+#include <utility>
+#include <algorithm> 
+#include <iterator>
 
-using std::cout;
-using std::endl;
-using std::set;
-using std::map;
-using std::ostream;
-using std::vector;
+
+// Dijkstra ist eine abgewandelte Version aus Kommentar von Samuel auf
+// https://stackoverflow.com/questions/3447566/dijkstras-algorithm-in-c
 
 
-const int INF = std::numeric_limits<int>::max();
+using namespace std;
+
+struct Position;
+typedef Position vertex_t;
+typedef int weight_t;
+
+const weight_t max_weight = numeric_limits<int>::max();
+
 
 struct Position {
     int x;
@@ -50,134 +44,68 @@ struct Position {
     Position& operator=(const Position& other) {this->x = other.x; this->y = other.y; return *this;}
 };
 
-struct Edge {
-    Edge(Position v1, Position v2) {
-        if (v1 < v2) {
-            vertex_1 = v1;
-            vertex_2 = v2;
-        } else {
-            vertex_1 = v2;
-            vertex_2 = v1;
-        }
-    }
-    Position vertex_1;
-    Position vertex_2;
 
-    bool operator<(const Edge& other) const {
-        if (this->vertex_1 != other.vertex_1) return this->vertex_1 < other.vertex_1;
-        return this->vertex_2 < other.vertex_2;
-    }
+struct neighbor {
+    vertex_t target;
+    weight_t weight;
+    neighbor(vertex_t arg_target, weight_t arg_weight)
+        : target(arg_target), weight(arg_weight) { }
+};
+
+//typedef vector<vector<neighbor> > adjacency_list_t;
+typedef map<vertex_t, map<vertex_t, weight_t> > adjacency_list_t;
+
+// Computing the shortest pathway
+
+void DijkstraComputePaths(vertex_t source,
+                     adjacency_list_t &adjacency_list,
+                     map<vertex_t, weight_t> &min_distance,
+                     map<vertex_t, vertex_t> &previous)
+{
+    min_distance.clear();
+    previous.clear();
+    for (auto it : adjacency_list)
+        min_distance[it.first] = max_weight;
     
-    friend ostream& operator<<(ostream& os, const Edge& edge) {
-        os << edge.vertex_1 << "<->" << edge.vertex_2;
-    }
-};
+    min_distance[source] = 0;
+    previous.clear();
+    set<pair<weight_t, vertex_t> > vertex_queue;
+    vertex_queue.insert(make_pair(min_distance[source], source));
 
+    while (!vertex_queue.empty())
+    {
+        weight_t dist = vertex_queue.begin()->first;
+        vertex_t u = vertex_queue.begin()->second;
+        vertex_queue.erase(vertex_queue.begin());
 
+        // Visit each edge exiting u
+        for (auto neighbor_iter : adjacency_list[u])
+        {
+            vertex_t v = neighbor_iter.first;
+            weight_t weight = neighbor_iter.second;
+            weight_t distance_through_u = dist + weight;
+            if (distance_through_u < min_distance[v]) {
+                vertex_queue.erase(make_pair(min_distance[v], v));
 
-    void addVertices(bool arr[4][3], set<Position>& vertices) {
-        for (int i = 0; i < 4; ++i) {
-            for (int j = 0; j < 3; ++j) {
-
-
-                if (arr[i][j] == true) vertices.insert({j, i});
+                min_distance[v] = distance_through_u;
+                previous[v] = u;
+                vertex_queue.insert(make_pair(min_distance[v], v));
 
             }
         }
-    }
-
-
-    void addEdges(bool arr[4][3], set<Edge>& edges) {
-        for (int i = 0; i < 4; ++i) {
-            for (int j = 0; j < 3; ++j) {
-                if (arr[i][j] == true) {
-                    for (int k = i - 1; k < i + 2; ++k) {
-                        for (int l = j - 1; l < j + 2; ++l) {
-                            if (k < 0 || k >= 4 || l < 0 || l >= 3 || (k == i && l == j)) continue;
-                            if (arr[k][l] == true) edges.insert({
-                                    {j, i},
-                                    {l, k}
-                                });
-        
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    void printVertices(const set<Position>& vertices) {
-        for (auto it : vertices)
-            cout << it << endl;
-    }
-
-    void printEdges(const set<Edge>& edges) {
-        for (auto it : edges)
-            cout << it << endl;
-    }
-
-struct CompareSecond {
-
-    bool operator()(const std::pair<Position, int>& left, const std::pair<Position,int>& right) const {
-        return left.second < right.second;
-    }
-};
-
-Position minDistance(map<Position, int>& dist) {
-    std::pair<Position, int> min = *std::min_element(dist.begin(), dist.end(), CompareSecond());
-    return min.first;
+    } // while
 }
 
 
 
-void dijkstra(map<Position, map<Position, int> > graph, Position source, Position dest, vector<Position>& shortestPath) {
+void addEdges(bool arr[6][6], map<Position, map<Position, int> >& graph) {
 
-    map<Position, int> q;
-    map<Position, int> dist;
-    map<Position, Position> prev;
-    for (auto it : graph) {
-        Position pos = it.first;
-        q.insert({pos, INF});
-        dist.insert({pos, INF});
-        prev.insert({pos, {-1, -1}});
-    }
-    q.insert({dest, INF});
-    dist.insert({dest, INF});
-    prev.insert({dest, {-1,-1}});
-     dist[source] = 0;
-     q[source] = 0;
-
-
-    while (!q.empty()) {
-        Position v = minDistance(q);
-        q.erase(v);
-        for (auto it : graph[v]) {
-            int alt = dist[v] + it.second;
-            if (alt < dist[it.first]) {
-                dist[it.first] = alt;
-                q[it.first] = alt;
-                prev[it.first] = v;
-            }
-        }
-      // if (v == dest) break;
-    }
-
-    if (dist[dest] != INF) {
-        shortestPath.push_back(dest);
-        while (prev[shortestPath[shortestPath.size()-1]].x != -1 && prev[shortestPath[shortestPath.size()-1]].y != -1) {
-            shortestPath.push_back(prev[shortestPath[shortestPath.size()-1]]);
-        }
-    }
-}
-
-void addEdges(bool arr[4][3], map<Position, map<Position, int> >& graph) {
-
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
             if (arr[i][j] == true) {
-                for (int k = i; k < i + 2; ++k) {
-                    for (int l = j; l < j + 2; ++l) {
-                        if (k < 0 || k >= 4 || l < 0 || l >= 3 || (k == i && l == j)) continue;
+                for (int k = i - 1; k < i + 2; ++k) {
+                    for (int l = j - 1; l < j + 2; ++l) {
+                        if (k < 0 || k >= 6 || l < 0 || l >= 6 || (k == i && l == j)) continue;
                         if (arr[k][l] == true) graph[{j, i}][{l, k}] = 1;
                     }
                 }
@@ -186,62 +114,68 @@ void addEdges(bool arr[4][3], map<Position, map<Position, int> >& graph) {
     }
 }
 
-void printGraph(const map<Position, map<Position, int> >& graph) {
-    for (auto it : graph)
-        for (auto it2 : it.second)
-            cout << it.first << "<->" << it2.first << " Distance: " << it2.second << endl;
+
+bool getShortestPath(map<vertex_t, vertex_t>& previous, vertex_t source, vertex_t dest, vector<vertex_t>& shortestPath) {
     
+    if (previous.find(dest) == previous.end()) return false;
+    
+    shortestPath.push_back(dest);
+    
+    while (true) {
+        shortestPath.push_back(previous[shortestPath[shortestPath.size() - 1]]);
+        if (shortestPath[shortestPath.size() - 1] == source) break;
+    } 
+    std::reverse(shortestPath.begin(), shortestPath.end());
 }
 
 int main(int argc, char** argv) {
 
 
-    bool arr[4][3]{
-        {true, false, false},
-        {true, false, false},
-        {true, false, true},
-        {false, true, true}
+    bool arr[6][6]{
+        {true, false, false, true, false, true},
+        {true, false, false, false, true, false},
+        {true, false, false, true, false, false},
+        {false, true, false, false, true, false},
+        {false, false, true, false, false, true},
+        {true, true, false, true, true, false}
     };
+    
+    map<vertex_t, weight_t> min_distance;
+    map<vertex_t, vertex_t> previous;
 
-    map<Position, map<Position, int> > graph;
-    addEdges(arr, graph);
-    
-    set<Edge> edges;
-    addEdges(arr, edges);
-    
-    set<Position> vertices;
-    addVertices(arr, vertices);
+    //map<Position, set<Position> > graph;
+    //addEdges(arr, graph);
     
     map<Position, map<Position, int> > graph2;
-    
-    //printEdges(edges);
-    
-    //printVertices(vertices);
-    
-    
-    for (auto it : vertices)
+    addEdges(arr, graph2);
+
+    DijkstraComputePaths({0,0}, graph2, min_distance, previous);
+
+    for (auto it : graph2)
     {
-        for (auto it2 : edges)
-        {
-            if (it == it2.vertex_1) {
-                graph2[it2.vertex_1][it2.vertex_2] = 1;
-            }
-        }
+        cout << it.first;
+        for (auto it2 : it.second)
+            cout << it2.first;
+        cout << endl;
+    } 
     
-    }
+    for (auto it : min_distance)
+        cout << it.first << " " << it.second << endl;
     
+    for (auto it : previous)
+        cout << it.first << " " << it.second << endl;
     
+    vector<vertex_t> shortestPath;
     
+    getShortestPath(previous, {0,0}, {5,0}, shortestPath);
     
-    vector<Position> shortestPath;
-    dijkstra(graph2, {0,0}, {2,3}, shortestPath);
+
     
     for (auto it : shortestPath)
-        cout << it << endl;
-  
-    //printGraph(graph2);
-
+    {
+        cout << it;    
+    }
+    
 
     return 0;
 }
-
